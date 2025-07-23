@@ -1,0 +1,17 @@
+{
+  "editor.quickSuggestions": {
+    "strings": true
+  },
+  "tailwindCSS.includeLanguages": {
+    "typescript": "javascript",
+    "typescriptreact": "javascript"
+  },
+  "tailwindCSS.emmetCompletions": true,
+  "editor.inlineSuggest.enabled": true,
+  "editor.suggest.showStatusBar": true,
+  "tailwindCSS.experimental.classRegex": [
+    ["className\\s*=\\s*[\"']([^\"']*)[\"']", "[\"'`]([^\"'`]*)[\"'`]"]
+  ],
+  "css.validate": false,
+  "tailwindCSS.validate": true
+}

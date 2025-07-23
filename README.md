@@ -82,6 +82,28 @@ Make sure to deploy the output of `npm run build`
 
 This template comes with [Tailwind CSS](https://tailwindcss.com/) already configured for a simple default starting experience. You can use whatever CSS framework you prefer.
 
+### Tailwind CSS IntelliSense
+
+This project has been configured to work with the [Tailwind CSS IntelliSense](https://marketplace.visualstudio.com/items?itemName=bradlc.vscode-tailwindcss) extension for VS Code. This extension provides:
+
+- Autocomplete for Tailwind CSS classes
+- Syntax highlighting for Tailwind CSS classes
+- Linting for Tailwind CSS classes
+- Hover previews for Tailwind CSS classes
+
+To use Tailwind CSS IntelliSense:
+
+1. Install the [Tailwind CSS IntelliSense](https://marketplace.visualstudio.com/items?itemName=bradlc.vscode-tailwindcss) extension in VS Code
+2. Restart VS Code
+3. Open a file with Tailwind CSS classes (e.g., any .tsx file in the app directory)
+4. Start typing a Tailwind CSS class name in a `className` attribute to see autocomplete suggestions
+
+The project includes the following configuration files for Tailwind CSS IntelliSense:
+
+- `tailwind.config.js` - Configuration for Tailwind CSS
+- `.vscode/settings.json` - VS Code settings for Tailwind CSS IntelliSense
+- `types/tailwind.d.ts` - TypeScript type definitions for Tailwind CSS
+
 ---
 
 Built with ❤️ using React Router.
