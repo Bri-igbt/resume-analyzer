@@ -70,6 +70,7 @@ const Resume = () => {
                         src={imageUrl}
                         className="w-full h-full object-contain rounded-2xl"
                         title="resume"
+                        alt='resume'
                     />
                   </a>
                 </div>

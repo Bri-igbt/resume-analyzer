@@ -1,3 +1,6 @@
+import {twMerge} from "tailwind-merge";
+import clsx, {type ClassValue} from "clsx";
+
 /**
  * Formats a file size in bytes to a human-readable string (KB, MB, GB)
  * @param bytes - The file size in bytes
@@ -21,3 +24,7 @@ export function formatFileSize(bytes: number, decimals: number = 2): string {
 }
 
 export  const generateUUID= () => crypto.randomUUID()
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
