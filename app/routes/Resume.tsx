@@ -11,47 +11,94 @@ export const meta = () => ([
 ])
 
 const Resume = () => {
-  const { auth, isLoading, fs, kv } = usePuterStore();
+  const { auth, isLoading: isPuterLoading, fs, kv } = usePuterStore();
   const { id } = useParams();
   const [imageUrl, setImageUrl] = useState('');
   const [resumeUrl, setResumeUrl] = useState('');
   const [feedback, setFeedback] = useState<Feedback | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isDataLoading, setIsDataLoading] = useState(true);
   const navigate = useNavigate();
 
+  // Authentication check
   useEffect(() => {
-    if(!isLoading && !auth.isAuthenticated) navigate(`/auth?next=/resume/${id}`);
-  }, [isLoading]);
+    if(!isPuterLoading && !auth.isAuthenticated) {
+      navigate(`/auth?next=/resume/${id}`);
+    }
+  }, [isPuterLoading, auth.isAuthenticated, id, navigate]);
 
-  useEffect(() => {
-    if(!isLoading && !auth.isAuthenticated) navigate(`/auth?next=/resume/${id}`);
-  }, [isLoading])
-
+  // Load resume data
   useEffect(() => {
     const loadResume = async () => {
-      const resume = await kv.get(`resume:${id}`);
+      setIsDataLoading(true);
+      setError(null);
+      
+      try {
+        // Get resume data from key-value store
+        const resume = await kv.get(`resume:${id}`);
+        if(!resume) {
+          setError("Resume not found. Please try again.");
+          setIsDataLoading(false);
+          return;
+        }
 
-      if(!resume) return;
+        // Parse resume data
+        let data;
+        try {
+          data = JSON.parse(resume);
+        } catch (e) {
+          setError("Failed to parse resume data. Please try again.");
+          setIsDataLoading(false);
+          return;
+        }
 
-      const data = JSON.parse(resume);
+        // Get resume PDF
+        const resumeBlob = await fs.read(data.resumePath);
+        if(!resumeBlob) {
+          setError("Failed to load resume file. Please try again.");
+          setIsDataLoading(false);
+          return;
+        }
 
-      const resumeBlob = await fs.read(data.resumePath);
-      if(!resumeBlob) return;
+        // Create PDF blob and URL
+        const pdfBlob = new Blob([resumeBlob], { type: 'application/pdf' });
+        const resumeUrl = URL.createObjectURL(pdfBlob);
+        setResumeUrl(resumeUrl);
 
-      const pdfBlob = new Blob([resumeBlob], { type: 'application/pdf' });
-      const resumeUrl = URL.createObjectURL(pdfBlob);
-      setResumeUrl(resumeUrl);
+        // Get resume image
+        const imageBlob = await fs.read(data.imagePath);
+        if(!imageBlob) {
+          setError("Failed to load resume image. Please try again.");
+          setIsDataLoading(false);
+          return;
+        }
+        
+        // Create image URL
+        const imageUrl = URL.createObjectURL(imageBlob);
+        setImageUrl(imageUrl);
 
-      const imageBlob = await fs.read(data.imagePath);
-      if(!imageBlob) return;
-      const imageUrl = URL.createObjectURL(imageBlob);
-      setImageUrl(imageUrl);
+        // Set feedback data
+        setFeedback(data.feedback);
+        console.log({resumeUrl, imageUrl, feedback: data.feedback });
+        
+        setIsDataLoading(false);
+      } catch (error) {
+        console.error("Error loading resume:", error);
+        setError("An unexpected error occurred. Please try again.");
+        setIsDataLoading(false);
+      }
+    };
 
-      setFeedback(data.feedback);
-      console.log({resumeUrl, imageUrl, feedback: data.feedback });
+    if (id) {
+      loadResume();
     }
-
-    loadResume();
-  }, [id]);
+    
+    // Cleanup function to revoke object URLs
+    return () => {
+      if (imageUrl) URL.revokeObjectURL(imageUrl);
+      if (resumeUrl) URL.revokeObjectURL(resumeUrl);
+    };
+  }, [id, kv, fs]);
 
   return (
       <main className="!pt-0">
@@ -62,7 +109,7 @@ const Resume = () => {
           </Link>
         </nav>
         <div className="flex flex-row w-full max-lg:flex-col-reverse">
-          <section className="feedback-section bg-[url('/images/bg-small.svg') bg-cover h-[100vh] sticky top-0 items-center justify-center">
+          <section className="feedback-section bg-[url('/images/bg-small.svg')] bg-cover h-[100vh] sticky top-0 items-center justify-center">
             {imageUrl && resumeUrl && (
                 <div className="animate-in fade-in duration-1000 gradient-border max-sm:m-0 h-[90%] max-wxl:h-fit w-fit">
                   <a href={resumeUrl} target="_blank" rel="noopener noreferrer">
@@ -79,19 +126,32 @@ const Resume = () => {
 
          <section className='feedback-section'>
            <h2 className='text-4xl !text-black font-bold'>Resume Review</h2>
-           {feedback ? (
+           {error ? (
+               <div className="error-message p-4 bg-red-100 border border-red-400 text-red-700 rounded mb-4">
+                 <p>{error}</p>
+                 <button 
+                   onClick={() => window.location.reload()} 
+                   className="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                 >
+                   Try Again
+                 </button>
+               </div>
+           ) : isDataLoading ? (
+               <img
+                   src='/images/resume-scan-2.gif'
+                   className='w-full'
+                   alt='scan'
+               />
+           ) : feedback ? (
                <div className='flex flex-col gap-8 animate-in fade-in'>
                   <Summary feedback={feedback}/>
                   <ATS score={feedback.ATS.score || 0} suggestions={feedback.ATS.tips || []}/>
                   <Details feedback={feedback} />
                </div>
            ) : (
-               <img
-                   src='/images/resume-scan-2.gif'
-                   className='w-full'
-                   alt='scan'
-               />
-
+               <div className="p-4 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded mb-4">
+                 <p>No feedback data available. Please try again.</p>
+               </div>
            )}
          </section>
         </div>

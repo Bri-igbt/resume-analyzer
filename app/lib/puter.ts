@@ -42,6 +42,93 @@ declare global {
     }
 }
 
+export interface UploadResult {
+    path: string;
+    size?: number;
+    type?: string;
+    name?: string;
+    [key: string]: any; // to allow extra metadata if returned
+}
+
+export interface UploadResponseSuccess {
+    success: true;
+    data: UploadResult;
+}
+
+export interface UploadResponseError {
+    success: false;
+    error: {
+        message: string;
+        code?: string;
+        details?: any;
+    };
+}
+
+export type UploadResponse = UploadResponseSuccess | UploadResponseError;
+
+// Define the type of the expected response from puter.fs.upload
+interface UploadedFile {
+    path: string;
+    name?: string;
+    size?: number;
+    type?: string;
+    // Add any other properties `puter.fs.upload()` returns
+}
+
+interface UploadSuccess {
+    success: true;
+    data: UploadedFile;
+}
+
+interface UploadFailure {
+    success: false;
+    error: {
+        message: string;
+        details?: any;
+    };
+}
+
+
+export async function upload(files: File[]): Promise<UploadResponse> {
+    try {
+        if (!files || files.length === 0) {
+            return {
+                success: false,
+                error: {
+                    message: "No files provided for upload",
+                },
+            };
+        }
+
+        const res: FSItem = await window.puter?.fs.upload(files);
+        console.log("Upload response:", res);
+
+        if (!res || !Array.isArray(res) || res.length === 0 || !res[0]?.path) {
+            return {
+                success: false,
+                error: {
+                    message: "Upload failed: Missing response or path",
+                    details: res,
+                },
+            };
+        }
+
+        return {
+            success: true,
+            data: res[0],
+        };
+    } catch (err: any) {
+        return {
+            success: false,
+            error: {
+                message: err?.message || "Unknown error during upload",
+                details: err,
+            },
+        };
+    }
+}
+
+
 interface PuterStore {
     isLoading: boolean;
     error: string | null;
@@ -350,7 +437,7 @@ export const usePuterStore = create<PuterStore>((set, get) => {
                     ],
                 },
             ],
-            { model: "gpt-4" }
+            { model: "Claude 3.5 Sonnet" }
         ) as Promise<AIResponse | undefined>;
     };
 
